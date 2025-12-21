@@ -1,5 +1,5 @@
 """
-Compile PDF Node - Compiles LaTeX to PDF using Docker.
+Compile PDF Node - Compiles LaTeX to PDF using Docker or local pdflatex.
 """
 
 import os
@@ -14,11 +14,11 @@ from ..state import ResearchState
 
 async def compile_pdf_node(state: ResearchState) -> dict:
     """
-    Compile the LaTeX document to PDF using Docker.
+    Compile the LaTeX document to PDF using Docker or local pdflatex.
 
     This node:
     - Writes .tex and .bib files to temp directory
-    - Runs pdflatex via Docker
+    - Runs pdflatex via Docker (or local fallback)
     - Packages all outputs into a ZIP file
     """
     tracer = state.get("tracer")
@@ -30,80 +30,82 @@ async def compile_pdf_node(state: ResearchState) -> dict:
     latex_content = state["latex_content"]
     bibtex_content = state["bibtex_content"]
 
-    # Create temporary directory for compilation
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmpdir = Path(tmpdir)
+    # Create temporary directory for compilation (don't auto-delete)
+    tmpdir = Path(tempfile.mkdtemp(prefix="latex_research_"))
 
-        # Write files
-        tex_file = tmpdir / "paper.tex"
-        bib_file = tmpdir / "references.bib"
+    # Write files
+    tex_file = tmpdir / "paper.tex"
+    bib_file = tmpdir / "references.bib"
 
-        tex_file.write_text(latex_content)
-        bib_file.write_text(bibtex_content)
-
-        if tracer:
-            await tracer.markdown("Files written to temp directory")
-
-        # Run pdflatex via Docker
-        try:
-            pdf_path = await run_latex_docker(tmpdir, "paper.tex", tracer)
-            compilation_success = pdf_path is not None
-        except Exception as e:
-            if tracer:
-                await tracer.markdown(f"⚠️ Docker compilation failed: {str(e)}")
-                await tracer.markdown("Attempting local pdflatex...")
-
-            # Fallback to local pdflatex
-            try:
-                pdf_path = await run_latex_local(tmpdir, "paper.tex", tracer)
-                compilation_success = pdf_path is not None
-            except Exception as e2:
-                if tracer:
-                    await tracer.markdown(f"❌ Local compilation also failed: {str(e2)}")
-                compilation_success = False
-                pdf_path = None
-
-        # Get the tracer filesystem for output
-        if tracer:
-            fs = await tracer.fs()
-
-        # Package outputs
-        output_files = {}
-
-        # Copy tex file
-        if tracer:
-            await fs.write("out/paper.tex", tex_file.read_bytes())
-            output_files["tex_path"] = f"/files/{tracer.fid}/out/paper.tex"
-
-        # Copy bib file
-        if tracer:
-            await fs.write("out/references.bib", bib_file.read_bytes())
-            output_files["bib_path"] = f"/files/{tracer.fid}/out/references.bib"
-
-        # Copy PDF if compilation succeeded
-        if compilation_success and pdf_path and pdf_path.exists():
-            if tracer:
-                await fs.write("out/paper.pdf", pdf_path.read_bytes())
-                output_files["pdf_path"] = f"/files/{tracer.fid}/out/paper.pdf"
-                await tracer.markdown("✅ PDF compiled successfully!")
-        else:
-            output_files["pdf_path"] = None
-            if tracer:
-                await tracer.markdown("⚠️ PDF compilation failed - .tex file available for manual compilation")
-
-        # Create ZIP package
-        zip_buffer = create_zip_package(tmpdir, compilation_success)
-        if tracer:
-            await fs.write("out/paper.zip", zip_buffer)
-            output_files["zip_path"] = f"/files/{tracer.fid}/out/paper.zip"
-            await tracer.markdown("📦 ZIP package created")
+    tex_file.write_text(latex_content)
+    bib_file.write_text(bibtex_content)
 
     if tracer:
-        await tracer.markdown("### Compilation Complete")
-        if output_files.get("pdf_path"):
-            await tracer.markdown(f"**PDF**: [Download]({output_files['pdf_path']})")
-        await tracer.markdown(f"**LaTeX Source**: [Download]({output_files.get('tex_path', 'N/A')})")
-        await tracer.markdown(f"**Full Package**: [Download]({output_files.get('zip_path', 'N/A')})")
+        await tracer.markdown(f"Files written to: `{tmpdir}`")
+
+    # Run pdflatex via Docker
+    compilation_success = False
+    pdf_path = None
+
+    try:
+        pdf_path = await run_latex_docker(tmpdir, "paper.tex", tracer)
+        compilation_success = pdf_path is not None
+    except Exception as e:
+        if tracer:
+            await tracer.markdown(f"⚠️ Docker compilation failed: {str(e)}")
+            await tracer.markdown("Attempting local pdflatex...")
+
+        # Fallback to local pdflatex
+        try:
+            pdf_path = await run_latex_local(tmpdir, "paper.tex", tracer)
+            compilation_success = pdf_path is not None
+        except Exception as e2:
+            if tracer:
+                await tracer.markdown(f"⚠️ Local pdflatex not available: {str(e2)}")
+            compilation_success = False
+            pdf_path = None
+
+    # Package outputs
+    output_files = {}
+
+    if tracer:
+        fs = await tracer.fs()
+        fid = tracer.fid
+
+        # Upload tex file
+        tex_path_str = str(tex_file)
+        fs.upload(tex_path_str)
+        output_files["tex_path"] = f"/files/{fid}/out/paper.tex"
+
+        # Upload bib file
+        bib_path_str = str(bib_file)
+        fs.upload(bib_path_str)
+        output_files["bib_path"] = f"/files/{fid}/out/references.bib"
+
+        # Upload PDF if compilation succeeded
+        if compilation_success and pdf_path and pdf_path.exists():
+            fs.upload(str(pdf_path))
+            output_files["pdf_path"] = f"/files/{fid}/out/paper.pdf"
+            await tracer.markdown("✅ PDF compiled successfully!")
+        else:
+            output_files["pdf_path"] = None
+            await tracer.markdown("⚠️ PDF compilation failed - .tex file available for manual compilation")
+
+        # Create and upload ZIP package
+        zip_file_path = create_zip_package(tmpdir, compilation_success)
+        fs.upload(str(zip_file_path))
+        output_files["zip_path"] = f"/files/{fid}/out/paper.zip"
+        await tracer.markdown("📦 ZIP package created")
+
+        # Show download links
+        await tracer.markdown("### Download Files")
+        await tracer.html(f"""
+        <div style='display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0;'>
+            {f"<a href='{output_files['pdf_path']}' style='display: inline-block; padding: 10px 20px; background: #2196F3; color: white; text-decoration: none; border-radius: 5px;'>📄 Download PDF</a>" if output_files.get('pdf_path') else ""}
+            <a href='{output_files['tex_path']}' style='display: inline-block; padding: 10px 20px; background: #4CAF50; color: white; text-decoration: none; border-radius: 5px;'>📝 Download LaTeX</a>
+            <a href='{output_files['zip_path']}' style='display: inline-block; padding: 10px 20px; background: #FF9800; color: white; text-decoration: none; border-radius: 5px;'>📦 Download All (ZIP)</a>
+        </div>
+        """)
 
     return output_files
 
@@ -153,6 +155,12 @@ async def run_latex_local(workdir: Path, tex_filename: str, tracer) -> Path | No
     if tracer:
         await tracer.markdown("Running local pdflatex...")
 
+    # Check if pdflatex exists
+    try:
+        subprocess.run(["which", "pdflatex"], capture_output=True, check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        raise RuntimeError("pdflatex not found on system")
+
     # Run pdflatex multiple times for references
     for i in range(3):
         result = subprocess.run(
@@ -178,14 +186,14 @@ async def run_latex_local(workdir: Path, tex_filename: str, tracer) -> Path | No
     return None
 
 
-def create_zip_package(workdir: Path, include_pdf: bool) -> bytes:
+def create_zip_package(workdir: Path, include_pdf: bool) -> Path:
     """
     Create a ZIP package of all output files.
+    Returns the path to the ZIP file.
     """
-    import io
+    zip_path = workdir / "paper.zip"
 
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
         # Add tex file
         tex_file = workdir / "paper.tex"
         if tex_file.exists():
@@ -207,4 +215,4 @@ def create_zip_package(workdir: Path, include_pdf: bool) -> bytes:
         if log_file.exists():
             zf.write(log_file, "paper.log")
 
-    return zip_buffer.getvalue()
+    return zip_path
