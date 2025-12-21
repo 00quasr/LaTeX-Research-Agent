@@ -1,0 +1,107 @@
+\documentclass[12pt, a4paper]{article}
+
+% ============================================================================
+% Packages
+% ============================================================================
+
+% Language and encoding
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[<< language >>]{babel}
+
+% Typography
+\usepackage{microtype}
+\usepackage{setspace}
+\onehalfspacing
+
+% Margins
+\usepackage[margin=1in]{geometry}
+
+% Headers and footers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\thepage}
+\lhead{\nouppercase{\leftmark}}
+
+% Mathematics
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% Graphics and colors
+\usepackage{graphicx}
+\usepackage{xcolor}
+
+% Tables
+\usepackage{booktabs}
+\usepackage{longtable}
+
+% Lists
+\usepackage{enumitem}
+
+% Hyperlinks
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    citecolor=blue,
+}
+
+% Bibliography
+<% if citation_style == 'apa' %>
+\usepackage[style=apa, backend=biber]{biblatex}
+<% elif citation_style == 'ieee' %>
+\usepackage[style=ieee, backend=biber]{biblatex}
+<% elif citation_style == 'chicago' %>
+\usepackage[style=chicago-authordate, backend=biber]{biblatex}
+<% elif citation_style == 'mla' %>
+\usepackage[style=mla, backend=biber]{biblatex}
+<% else %>
+\usepackage[style=numeric, backend=biber]{biblatex}
+<% endif %>
+\addbibresource{references.bib}
+
+% Abstract formatting
+\usepackage{abstract}
+\renewcommand{\abstractnamefont}{\normalfont\bfseries}
+\renewcommand{\abstracttextfont}{\normalfont\small}
+
+% ============================================================================
+% Document Metadata
+% ============================================================================
+
+\title{<< title >>}
+\author{<< author >>}
+\date{<< date >>}
+
+% ============================================================================
+% Document
+% ============================================================================
+
+\begin{document}
+
+% Title page
+\maketitle
+\thispagestyle{empty}
+
+% Abstract
+\begin{abstract}
+<< abstract >>
+\end{abstract}
+
+\newpage
+
+% Table of contents
+\tableofcontents
+\newpage
+
+% Main content
+<< body >>
+
+% Bibliography
+\newpage
+\printbibliography
+
+\end{document}

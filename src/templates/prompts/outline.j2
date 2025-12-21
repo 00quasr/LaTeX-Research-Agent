@@ -1,0 +1,72 @@
+You are an expert academic writer creating a detailed outline for a research paper.
+
+## Research Plan Summary
+
+**Title**: {{ research_plan.title }}
+
+**Thesis Statement**: {{ research_plan.thesis_statement }}
+
+**Research Questions**:
+{% for question in research_plan.research_questions %}
+- {{ question }}
+{% endfor %}
+
+**Key Themes**:
+{% for theme in research_plan.key_themes %}
+- {{ theme }}
+{% endfor %}
+
+**Methodology**: {{ research_plan.methodology_approach }}
+
+**Target Audience**: {{ research_plan.target_audience }}
+
+## Paper Requirements
+- **Target Length**: {{ target_pages }} pages (~{{ target_words }} words)
+- **Academic Level**: {{ level }}
+- **Language**: {{ language }}
+
+{% if additional_instructions %}
+## Additional Instructions
+{{ additional_instructions }}
+{% endif %}
+
+## Your Task
+
+Create a comprehensive outline for this research paper. The outline should include:
+
+1. **Title**: Finalize the paper title
+2. **Abstract Summary**: A brief 2-3 sentence summary for the abstract
+3. **Sections**: Create 5-10 major sections with:
+   - Section ID (1, 2, 3, etc.)
+   - Section title
+   - Purpose of the section
+   - Target word count
+   - Subsections (2-4 per section) with:
+     - Subsection ID (1.1, 1.2, etc.)
+     - Title
+     - Key points to cover (3-5 bullet points)
+     - Target word count
+
+### Required Structure
+
+Your outline MUST include these core sections (you may add more):
+
+1. **Introduction** - Context, thesis, overview
+2. **Background/Literature Review** - Existing knowledge, key concepts
+3. **Main Analysis Sections** (2-4 sections) - Core content addressing research questions
+4. **Discussion** - Synthesis, implications, limitations
+5. **Conclusion** - Summary, future directions
+
+### Word Count Guidelines
+
+- Total words should sum to approximately {{ target_words }}
+- Introduction: ~{{ (target_words * 0.08) | int }} words
+- Background: ~{{ (target_words * 0.15) | int }} words
+- Main sections: ~{{ (target_words * 0.55) | int }} words combined
+- Discussion: ~{{ (target_words * 0.12) | int }} words
+- Conclusion: ~{{ (target_words * 0.10) | int }} words
+
+Ensure the outline is:
+- Logically structured with clear progression
+- Comprehensive but achievable within word limits
+- Academically rigorous for the {{ level }} level

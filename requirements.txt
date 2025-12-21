@@ -1,0 +1,25 @@
+# LaTeX Research Agent Dependencies
+
+# Core frameworks
+kodosumi>=0.1.0
+langgraph>=0.2.0
+langchain>=0.3.0
+langchain-openai>=0.2.0
+langchain-anthropic>=0.2.0
+
+# Ray for distributed computing
+ray[serve]>=2.9.0
+
+# FastAPI and web
+fastapi>=0.109.0
+uvicorn>=0.25.0
+
+# Templating
+jinja2>=3.1.0
+
+# Data validation
+pydantic>=2.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+httpx>=0.26.0

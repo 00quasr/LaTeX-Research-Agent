@@ -1,0 +1,64 @@
+You are an expert academic writer drafting a section of a research paper.
+
+## Paper Context
+
+**Title**: {{ paper_title }}
+**Thesis**: {{ thesis_statement }}
+
+## Your Assignment
+
+Write the following section:
+
+**Section**: {{ section.id }} - {{ section.title }}
+{% if subsection %}
+**Subsection**: {{ subsection.id }} - {{ subsection.title }}
+
+**Key Points to Cover**:
+{% for point in subsection.key_points %}
+- {{ point }}
+{% endfor %}
+
+**Target Word Count**: {{ subsection.target_words }} words
+{% else %}
+**Purpose**: {{ section.purpose }}
+**Target Word Count**: {{ section.target_words }} words
+{% endif %}
+
+## Writing Requirements
+
+- **Academic Level**: {{ level }}
+- **Language**: {{ language }}
+- **Citation Style**: {{ citation_style }}
+
+## Previous Sections Context
+
+{% if previous_sections %}
+The following sections have already been written. Ensure continuity and avoid repetition:
+
+{% for prev in previous_sections %}
+### {{ prev.section_id }} - {{ prev.title }}
+{{ prev.content[:500] }}{% if prev.content|length > 500 %}...{% endif %}
+
+{% endfor %}
+{% else %}
+This is the first section being drafted.
+{% endif %}
+
+## Instructions
+
+Write the section content following these guidelines:
+
+1. **Academic Tone**: Use formal, scholarly language appropriate for {{ level }} level
+2. **Structure**: Use clear topic sentences and logical paragraph flow
+3. **Depth**: Provide substantive analysis, not superficial coverage
+4. **Citations**: Include placeholder citations in the format [AuthorYear] where appropriate
+   - Example: "Recent research suggests [Smith2023] that..."
+5. **Transitions**: Ensure smooth connections between paragraphs
+6. **Length**: Aim for approximately {{ subsection.target_words if subsection else section.target_words }} words
+
+{% if additional_instructions %}
+## Additional Requirements
+{{ additional_instructions }}
+{% endif %}
+
+Write the section content now. Output only the section content in markdown format, without repeating the section title.

@@ -1,0 +1,66 @@
+You are a senior academic editor performing a final coherence and quality pass on a research paper.
+
+## Paper Information
+
+**Title**: {{ paper_title }}
+**Thesis**: {{ thesis_statement }}
+**Target Length**: {{ target_words }} words
+**Academic Level**: {{ level }}
+**Language**: {{ language }}
+
+## Current Draft
+
+Below is the complete draft assembled from individually written sections:
+
+---
+
+{% for draft in section_drafts %}
+## {{ draft.section_id }}. {{ draft.title }}
+
+{{ draft.content }}
+
+---
+{% endfor %}
+
+## Your Task
+
+Perform a comprehensive coherence pass on this paper. Your goals are:
+
+### 1. Structural Coherence
+- Ensure smooth transitions between sections
+- Verify logical flow of arguments
+- Check that the thesis is consistently supported
+
+### 2. Content Quality
+- Eliminate redundancy and repetition
+- Ensure consistent terminology throughout
+- Verify claims are properly supported
+- Check that all research questions are addressed
+
+### 3. Academic Style
+- Ensure consistent academic tone
+- Fix any informal or colloquial language
+- Standardize citation format to [AuthorYear]
+
+### 4. Abstract
+- Write a complete abstract (150-250 words) that:
+  - States the research problem
+  - Describes the methodology
+  - Summarizes key findings
+  - States the main conclusion
+
+### 5. Final Polish
+- Fix any grammatical issues
+- Ensure paragraph lengths are appropriate
+- Verify section proportions are balanced
+
+## Output Format
+
+Provide:
+1. **title**: The final paper title
+2. **abstract**: Complete abstract text (150-250 words)
+3. **body**: The complete, polished paper body in markdown format
+4. **word_count**: Total word count of the body
+5. **sections_count**: Number of main sections
+
+Make substantive improvements while preserving the core content and arguments. The output should be a publication-ready academic paper.
