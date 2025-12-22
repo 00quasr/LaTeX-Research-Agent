@@ -73,18 +73,16 @@ async def compile_pdf_node(state: ResearchState) -> dict:
         fid = tracer.fid
 
         # Upload tex file
-        tex_path_str = str(tex_file)
-        fs.upload(tex_path_str)
+        await fs.upload(str(tex_file))
         output_files["tex_path"] = f"/files/{fid}/out/paper.tex"
 
         # Upload bib file
-        bib_path_str = str(bib_file)
-        fs.upload(bib_path_str)
+        await fs.upload(str(bib_file))
         output_files["bib_path"] = f"/files/{fid}/out/references.bib"
 
         # Upload PDF if compilation succeeded
         if compilation_success and pdf_path and pdf_path.exists():
-            fs.upload(str(pdf_path))
+            await fs.upload(str(pdf_path))
             output_files["pdf_path"] = f"/files/{fid}/out/paper.pdf"
             await tracer.markdown("✅ PDF compiled successfully!")
         else:
@@ -93,9 +91,12 @@ async def compile_pdf_node(state: ResearchState) -> dict:
 
         # Create and upload ZIP package
         zip_file_path = create_zip_package(tmpdir, compilation_success)
-        fs.upload(str(zip_file_path))
+        await fs.upload(str(zip_file_path))
         output_files["zip_path"] = f"/files/{fid}/out/paper.zip"
         await tracer.markdown("📦 ZIP package created")
+
+        # Close the filesystem to ensure files are written
+        await fs.close()
 
         # Show download links
         await tracer.markdown("### Download Files")

@@ -44,13 +44,17 @@ class Subsection(BaseModel):
     title: str = Field(description="Subsection title")
     key_points: List[str] = Field(
         description="Key points to cover in this subsection",
-        min_length=2,
-        max_length=6
+        min_length=3,
+        max_length=10
     )
     target_words: int = Field(
         description="Target word count for this subsection",
-        ge=200,
-        le=2000
+        ge=500,
+        le=5000
+    )
+    suggested_figures: Optional[List[str]] = Field(
+        description="Suggested figures, charts, or tables for this subsection",
+        default=None
     )
 
 
@@ -66,8 +70,8 @@ class Section(BaseModel):
     )
     target_words: int = Field(
         description="Target word count for entire section",
-        ge=500,
-        le=8000
+        ge=1000,
+        le=15000
     )
 
 
@@ -228,8 +232,9 @@ DEFAULT_CONFIG = {
     "fast_model": "gpt-4o-mini",
 }
 
-# Words per page estimate (academic formatting)
-WORDS_PER_PAGE = 300
+# Words per page estimate (academic formatting with figures/tables)
+# Standard academic paper: ~500 words per page with margins, spacing, figures
+WORDS_PER_PAGE = 500
 
 def estimate_words_from_pages(pages: int) -> int:
     """Estimate total words from target page count."""

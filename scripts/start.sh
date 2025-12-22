@@ -1,6 +1,10 @@
 #!/bin/bash
-# Start LaTeX Research Agent
+# Start LaTeX Research Agent (Local Development)
 # Usage: ./scripts/start.sh
+#
+# This starts Ray Serve with your app. Access at http://localhost:8000
+# For the full Kodosumi panel, run in a separate terminal:
+#   uv run koco start --register http://localhost:8000/-/routes
 
 set -e
 
@@ -10,24 +14,26 @@ echo "Starting LaTeX Research Agent..."
 
 # Load environment variables
 if [ -f .env ]; then
-    export $(cat .env | grep -v '^#' | xargs)
+    set -a
+    source .env
+    set +a
 fi
 
 # Start Ray (if not running)
-if ! ray status &> /dev/null; then
+if ! uv run ray status &> /dev/null; then
     echo "Starting Ray..."
     uv run ray start --head
     sleep 2
 fi
 
-# Deploy and start
-echo "Deploying service..."
-uv run koco deploy --run --file ./data/config/config.yaml
-
-echo "Starting panel and registering routes..."
-uv run koco serve --register http://localhost:8000/-/routes
-
 echo ""
-echo "LaTeX Research Agent is running!"
-echo "  Panel: http://localhost:3370"
-echo "  API:   http://localhost:8000"
+echo "Starting Ray Serve at http://localhost:8000"
+echo ""
+echo "To use the Kodosumi panel, run in another terminal:"
+echo "  uv run koco start --register http://localhost:8000/-/routes"
+echo ""
+echo "Press Ctrl+C to stop"
+echo ""
+
+# Run serve (blocking)
+uv run serve run src.app:fast_app

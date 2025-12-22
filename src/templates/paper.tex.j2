@@ -1,7 +1,7 @@
-\documentclass[12pt, a4paper]{article}
+\documentclass[12pt, a4paper, twoside]{article}
 
 % ============================================================================
-% Packages
+% Professional Academic Paper Template
 % ============================================================================
 
 % Language and encoding
@@ -9,49 +9,102 @@
 \usepackage[T1]{fontenc}
 \usepackage[<< language >>]{babel}
 
+% Professional fonts
+\usepackage{mathpazo}  % Palatino font for text
+\usepackage{inconsolata}  % Better monospace font
+
 % Typography
 \usepackage{microtype}
 \usepackage{setspace}
 \onehalfspacing
 
-% Margins
-\usepackage[margin=1in]{geometry}
+% Page layout
+\usepackage[
+    a4paper,
+    top=2.5cm,
+    bottom=2.5cm,
+    left=3cm,
+    right=2.5cm,
+    headheight=14pt
+]{geometry}
 
 % Headers and footers
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
-\rhead{\thepage}
-\lhead{\nouppercase{\leftmark}}
+\fancyhead[LE,RO]{\thepage}
+\fancyhead[RE]{\nouppercase{\leftmark}}
+\fancyhead[LO]{\nouppercase{\rightmark}}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{
+    \fancyhf{}
+    \fancyfoot[C]{\thepage}
+    \renewcommand{\headrulewidth}{0pt}
+}
 
 % Mathematics
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{amsthm}
 
 % Graphics and colors
 \usepackage{graphicx}
-\usepackage{xcolor}
+\usepackage[dvipsnames,svgnames,table]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning,calc,fit,backgrounds}
+
+% Charts and plots
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
 
 % Tables
 \usepackage{booktabs}
 \usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{colortbl}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+
+% Figures
+\usepackage{float}
+\usepackage{wrapfig}
+\usepackage{subcaption}
+\usepackage[font=small,labelfont=bf,format=hang]{caption}
 
 % Lists
 \usepackage{enumitem}
+\setlist[itemize]{nosep, left=0pt}
+\setlist[enumerate]{nosep, left=0pt}
+
+% Code and algorithms
+\usepackage{listings}
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+}
 
 % Hyperlinks
 \usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
-    linkcolor=blue,
+    linkcolor=NavyBlue,
     filecolor=magenta,
-    urlcolor=cyan,
-    citecolor=blue,
+    urlcolor=RoyalBlue,
+    citecolor=ForestGreen,
+    pdftitle={<< title >>},
+    pdfauthor={<< author >>},
 }
 
 % Bibliography
 <% if citation_style == 'apa' %>
-\usepackage[style=apa, backend=biber]{biblatex}
+\usepackage[style=apa, backend=biber, natbib=true]{biblatex}
 <% elif citation_style == 'ieee' %>
 \usepackage[style=ieee, backend=biber]{biblatex}
 <% elif citation_style == 'chicago' %>
@@ -63,16 +116,79 @@
 <% endif %>
 \addbibresource{references.bib}
 
+% Cross-references
+\usepackage[nameinlink,capitalise]{cleveref}
+
 % Abstract formatting
 \usepackage{abstract}
-\renewcommand{\abstractnamefont}{\normalfont\bfseries}
-\renewcommand{\abstracttextfont}{\normalfont\small}
+\renewcommand{\abstractnamefont}{\normalfont\bfseries\Large}
+\renewcommand{\abstracttextfont}{\normalfont}
+\setlength{\absleftindent}{1cm}
+\setlength{\absrightindent}{1cm}
+
+% Section formatting
+\usepackage{titlesec}
+\titleformat{\section}
+    {\normalfont\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}
+    {\normalfont\large\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+    {\normalfont\normalsize\bfseries}{\thesubsubsection}{1em}{}
+\titlespacing*{\section}{0pt}{3.5ex plus 1ex minus .2ex}{2.3ex plus .2ex}
+\titlespacing*{\subsection}{0pt}{3.25ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+
+% Theorems and definitions
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{example}{Example}[section]
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}{Proposition}[section]
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}[section]
+
+% Custom commands for figure placeholders
+\newcommand{\placeholderfig}[3]{%
+    \begin{figure}[H]
+        \centering
+        \fbox{\parbox{0.8\textwidth}{\centering\vspace{2cm}#3\vspace{2cm}}}
+        \caption{#2}
+        \label{fig:#1}
+    \end{figure}
+}
+
+% Custom commands for chart placeholders
+\newcommand{\placeholderchart}[4]{%
+    \begin{figure}[H]
+        \centering
+        \begin{tikzpicture}
+            \begin{axis}[
+                width=0.8\textwidth,
+                height=6cm,
+                title={#2},
+                xlabel={X-Axis},
+                ylabel={Y-Axis},
+                grid=major,
+                legend pos=north west,
+            ]
+            % Placeholder data
+            \addplot[blue, thick, mark=*] coordinates {(1,2) (2,4) (3,3) (4,5) (5,4)};
+            \legend{Data Series}
+            \end{axis}
+        \end{tikzpicture}
+        \caption{#3}
+        \label{chart:#1}
+    \end{figure}
+}
+
+% Keywords command
+\providecommand{\keywords}[1]{\textbf{Keywords:} #1}
 
 % ============================================================================
 % Document Metadata
 % ============================================================================
 
-\title{<< title >>}
+\title{\LARGE\textbf{<< title >>}}
 \author{<< author >>}
 \date{<< date >>}
 
@@ -83,25 +199,62 @@
 \begin{document}
 
 % Title page
-\maketitle
-\thispagestyle{empty}
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
 
-% Abstract
-\begin{abstract}
-<< abstract >>
-\end{abstract}
+    {\LARGE\textbf{<< title >>}\par}
 
-\newpage
+    \vspace{2cm}
+
+    {\Large << author >>\par}
+
+    \vspace{1cm}
+
+    {\large << date >>\par}
+
+    \vfill
+
+    \begin{abstract}
+        << abstract >>
+    \end{abstract}
+
+    \vspace{1cm}
+
+\end{titlepage}
 
 % Table of contents
+\newpage
 \tableofcontents
+
+% List of figures (if any)
+\listoffigures
+\addcontentsline{toc}{section}{List of Figures}
+
+% List of tables (if any)
+\listoftables
+\addcontentsline{toc}{section}{List of Tables}
+
 \newpage
 
-% Main content
+% ============================================================================
+% Main Content
+% ============================================================================
+
 << body >>
 
+% ============================================================================
 % Bibliography
+% ============================================================================
+
 \newpage
-\printbibliography
+\printbibliography[heading=bibintoc,title={References}]
+
+% ============================================================================
+% Appendices (if needed)
+% ============================================================================
+
+% \appendix
+% \section{Additional Data}
 
 \end{document}

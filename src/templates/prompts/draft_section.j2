@@ -1,4 +1,4 @@
-You are an expert academic writer drafting a section of a research paper.
+You are an expert academic writer drafting a comprehensive section of a substantial research paper.
 
 ## Paper Context
 
@@ -7,21 +7,28 @@ You are an expert academic writer drafting a section of a research paper.
 
 ## Your Assignment
 
-Write the following section:
+Write the following section with SUBSTANTIAL depth and detail:
 
 **Section**: {{ section.id }} - {{ section.title }}
 {% if subsection %}
 **Subsection**: {{ subsection.id }} - {{ subsection.title }}
 
-**Key Points to Cover**:
+**Key Points to Cover** (develop each thoroughly):
 {% for point in subsection.key_points %}
 - {{ point }}
 {% endfor %}
 
-**Target Word Count**: {{ subsection.target_words }} words
+{% if subsection.suggested_figures %}
+**Suggested Visual Elements**:
+{% for fig in subsection.suggested_figures %}
+- {{ fig }}
+{% endfor %}
+{% endif %}
+
+**Target Word Count**: {{ subsection.target_words }} words (MINIMUM - aim higher)
 {% else %}
 **Purpose**: {{ section.purpose }}
-**Target Word Count**: {{ section.target_words }} words
+**Target Word Count**: {{ section.target_words }} words (MINIMUM - aim higher)
 {% endif %}
 
 ## Writing Requirements
@@ -33,32 +40,80 @@ Write the following section:
 ## Previous Sections Context
 
 {% if previous_sections %}
-The following sections have already been written. Ensure continuity and avoid repetition:
+The following sections have already been written. Ensure continuity and build upon them:
 
 {% for prev in previous_sections %}
 ### {{ prev.section_id }} - {{ prev.title }}
-{{ prev.content[:500] }}{% if prev.content|length > 500 %}...{% endif %}
+{{ prev.content[:800] }}{% if prev.content|length > 800 %}...{% endif %}
 
 {% endfor %}
 {% else %}
 This is the first section being drafted.
 {% endif %}
 
-## Instructions
+## CRITICAL Instructions for Comprehensive Writing
 
-Write the section content following these guidelines:
+### Length and Depth Requirements
+- **MINIMUM {{ subsection.target_words if subsection else section.target_words }} words** - this is a floor, not a ceiling
+- Each key point should be developed into 2-4 substantial paragraphs
+- Do NOT be superficial - this is a comprehensive academic paper
+- Include detailed explanations, examples, and analysis
 
-1. **Academic Tone**: Use formal, scholarly language appropriate for {{ level }} level
-2. **Structure**: Use clear topic sentences and logical paragraph flow
-3. **Depth**: Provide substantive analysis, not superficial coverage
-4. **Citations**: Include placeholder citations in the format [AuthorYear] where appropriate
-   - Example: "Recent research suggests [Smith2023] that..."
-5. **Transitions**: Ensure smooth connections between paragraphs
-6. **Length**: Aim for approximately {{ subsection.target_words if subsection else section.target_words }} words
+### Content Structure
+1. **Opening**: Strong topic paragraph introducing the section's focus
+2. **Development**: Each key point gets thorough treatment:
+   - Explain the concept/idea in detail
+   - Provide specific examples or case studies
+   - Include relevant data, statistics, or research findings
+   - Analyze implications and connections
+3. **Transitions**: Smooth connections between paragraphs and ideas
+4. **Closing**: Summarize key takeaways and transition to next section
+
+### Visual Element Descriptions
+When suggesting figures, tables, or charts, include:
+- **[FIGURE X: Title]** - Description of what the figure shows
+- **[TABLE X: Title]** - Description of table contents and structure
+- **[CHART X: Title]** - Description of data visualization
+
+Example:
+[FIGURE 1: Evolution of Techno Music Production Technology]
+A timeline diagram showing the progression from analog synthesizers (1980s) through digital audio workstations (1990s) to modern AI-assisted production tools (2020s). Key milestones include the Roland TR-808, Ableton Live's introduction, and neural audio synthesis.
+
+### Citation Guidelines
+- Include citations in format [AuthorYear] throughout
+- Cite sources for statistics, claims, and research findings
+- Aim for 5-15 citations per subsection
+- Examples:
+  - "Research by [Smith2023] demonstrates that..."
+  - "According to industry analysis [Johnson2022], the market grew by..."
+  - "Several studies [Brown2021; Davis2022; Wilson2023] confirm..."
+
+### Academic Tone Requirements
+- Use formal, scholarly language appropriate for {{ level }} level
+- Avoid colloquialisms and informal expressions
+- Use discipline-specific terminology correctly
+- Maintain objective, analytical perspective
+- Support claims with evidence and reasoning
+
+### Paragraph Guidelines
+- Each paragraph: 100-200 words
+- Clear topic sentence
+- Supporting evidence and analysis
+- Concluding sentence that transitions
 
 {% if additional_instructions %}
 ## Additional Requirements
 {{ additional_instructions }}
 {% endif %}
 
-Write the section content now. Output only the section content in markdown format, without repeating the section title.
+## Output Format
+
+Write the section content in markdown format. Include:
+- Well-developed paragraphs (no bullet point lists as main content)
+- Embedded figure/table/chart descriptions in [FIGURE/TABLE/CHART] format
+- Citations in [AuthorYear] format
+- Proper subsection headers if subdividing further (use #### for sub-subsections)
+
+Do NOT include the section title - just write the content directly.
+
+**Remember: This must be AT LEAST {{ subsection.target_words if subsection else section.target_words }} words. Write comprehensively!**

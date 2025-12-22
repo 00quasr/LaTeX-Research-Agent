@@ -1,4 +1,4 @@
-You are an expert academic writer creating a detailed outline for a research paper.
+You are an expert academic writer creating a comprehensive, detailed outline for a substantial research paper.
 
 ## Research Plan Summary
 
@@ -32,41 +32,90 @@ You are an expert academic writer creating a detailed outline for a research pap
 
 ## Your Task
 
-Create a comprehensive outline for this research paper. The outline should include:
+Create a COMPREHENSIVE and DETAILED outline for this research paper. This is a SUBSTANTIAL academic work requiring depth and rigor.
 
-1. **Title**: Finalize the paper title
-2. **Abstract Summary**: A brief 2-3 sentence summary for the abstract
-3. **Sections**: Create 5-10 major sections with:
+### Outline Structure Requirements
+
+1. **Title**: Finalize the paper title (should be specific and scholarly)
+
+2. **Abstract Summary**: A brief 3-4 sentence summary for the abstract
+
+3. **Sections**: Create 7-12 major sections with EXTENSIVE subsections:
    - Section ID (1, 2, 3, etc.)
    - Section title
    - Purpose of the section
-   - Target word count
-   - Subsections (2-4 per section) with:
+   - Target word count (be generous - this is a long paper)
+   - Subsections (3-5 per section) with:
      - Subsection ID (1.1, 1.2, etc.)
      - Title
-     - Key points to cover (3-5 bullet points)
-     - Target word count
+     - Key points to cover (5-8 detailed bullet points each)
+     - Target word count (minimum 800-1500 words per subsection)
+     - Suggested figures/tables/charts where applicable
 
 ### Required Structure
 
-Your outline MUST include these core sections (you may add more):
+Your outline MUST include these core sections (expand each significantly):
 
-1. **Introduction** - Context, thesis, overview
-2. **Background/Literature Review** - Existing knowledge, key concepts
-3. **Main Analysis Sections** (2-4 sections) - Core content addressing research questions
-4. **Discussion** - Synthesis, implications, limitations
-5. **Conclusion** - Summary, future directions
+1. **Introduction** (~{{ (target_words * 0.08) | int }} words)
+   - Research context and motivation
+   - Problem statement
+   - Research objectives and questions
+   - Scope and significance
+   - Paper organization overview
+
+2. **Background and Literature Review** (~{{ (target_words * 0.18) | int }} words)
+   - Historical context
+   - Theoretical frameworks
+   - Current state of research
+   - Key studies and findings
+   - Research gaps
+
+3. **Methodology/Approach** (~{{ (target_words * 0.10) | int }} words)
+   - Research design
+   - Data sources and collection
+   - Analysis methods
+   - Limitations and assumptions
+
+4. **Main Analysis Sections** (3-5 sections, ~{{ (target_words * 0.45) | int }} words combined)
+   - Each addressing a major theme or research question
+   - Include subsections for different aspects
+   - Suggest relevant figures, tables, charts for each
+   - Provide detailed analysis with evidence
+
+5. **Discussion** (~{{ (target_words * 0.12) | int }} words)
+   - Synthesis of findings
+   - Implications (theoretical and practical)
+   - Comparison with existing literature
+   - Limitations of the study
+   - Recommendations
+
+6. **Conclusion** (~{{ (target_words * 0.07) | int }} words)
+   - Summary of key findings
+   - Main contributions
+   - Future research directions
+   - Closing remarks
+
+### Visual Elements to Suggest
+
+For each relevant subsection, suggest:
+- **Figures**: Diagrams, flowcharts, conceptual models
+- **Tables**: Comparison tables, data summaries, timelines
+- **Charts**: Graphs, bar charts, trend lines, pie charts
+- **Infographics**: Process flows, relationship maps
 
 ### Word Count Guidelines
 
 - Total words should sum to approximately {{ target_words }}
-- Introduction: ~{{ (target_words * 0.08) | int }} words
-- Background: ~{{ (target_words * 0.15) | int }} words
-- Main sections: ~{{ (target_words * 0.55) | int }} words combined
-- Discussion: ~{{ (target_words * 0.12) | int }} words
-- Conclusion: ~{{ (target_words * 0.10) | int }} words
+- Each subsection should be substantial (800-1500 words minimum)
+- Main analysis sections should be the bulk of the paper
+- Do NOT create superficial or thin sections
+
+### Quality Standards
 
 Ensure the outline is:
-- Logically structured with clear progression
-- Comprehensive but achievable within word limits
-- Academically rigorous for the {{ level }} level
+- Logically structured with clear progression of ideas
+- Comprehensive in coverage of the topic
+- Academically rigorous for {{ level }} level
+- Properly balanced between sections
+- Includes enough depth for a {{ target_pages }}-page paper
+- Contains suggested visualizations for data and concepts

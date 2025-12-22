@@ -15,7 +15,7 @@ TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
 
 def markdown_to_latex(markdown_text: str) -> str:
     """
-    Convert markdown to LaTeX.
+    Convert markdown to LaTeX with support for figures, tables, and charts.
 
     Handles:
     - Headers (## -> \section, ### -> \subsection)
@@ -23,8 +23,106 @@ def markdown_to_latex(markdown_text: str) -> str:
     - Italic (*text* -> \textit{text})
     - Lists
     - Citations [AuthorYear] -> \cite{AuthorYear}
+    - Figure/Table/Chart placeholders
     """
     text = markdown_text
+
+    # Process figure placeholders [FIGURE: id] or [FIGURE X: Title]
+    def process_figure(match):
+        full_match = match.group(0)
+        # Try to extract caption from following lines
+        lines_after = text[match.end():match.end()+500]
+        caption_match = re.search(r'Caption:\s*(.+?)(?:\n|$)', lines_after)
+        desc_match = re.search(r'Description:\s*(.+?)(?:\n\n|\n[A-Z]|$)', lines_after, re.DOTALL)
+
+        caption = caption_match.group(1).strip() if caption_match else "Figure"
+        description = desc_match.group(1).strip() if desc_match else "Placeholder figure"
+
+        # Generate a label from caption
+        label = re.sub(r'[^a-z0-9]', '', caption.lower())[:20]
+
+        return f"""
+\\begin{{figure}}[H]
+    \\centering
+    \\fbox{{\\parbox{{0.85\\textwidth}}{{\\centering\\vspace{{1.5cm}}\\textit{{{escape_latex_text(description)}}}\\vspace{{1.5cm}}}}}}
+    \\caption{{{escape_latex_text(caption)}}}
+    \\label{{fig:{label}}}
+\\end{{figure}}
+"""
+
+    text = re.sub(r'\[FIGURE[^\]]*\]', process_figure, text)
+
+    # Process table placeholders
+    def process_table(match):
+        # Look for markdown table after the placeholder
+        lines_after = text[match.end():match.end()+1000]
+        caption_match = re.search(r'Caption:\s*(.+?)(?:\n|$)', lines_after)
+        caption = caption_match.group(1).strip() if caption_match else "Table"
+
+        # Try to find markdown table
+        table_match = re.search(r'(\|.+\|(?:\n\|.+\|)+)', lines_after)
+
+        if table_match:
+            md_table = table_match.group(1)
+            latex_table = convert_markdown_table(md_table, caption)
+            return latex_table
+        else:
+            label = re.sub(r'[^a-z0-9]', '', caption.lower())[:20]
+            return f"""
+\\begin{{table}}[H]
+    \\centering
+    \\caption{{{escape_latex_text(caption)}}}
+    \\label{{tab:{label}}}
+    \\begin{{tabular}}{{lll}}
+        \\toprule
+        Column 1 & Column 2 & Column 3 \\\\
+        \\midrule
+        Data & Data & Data \\\\
+        \\bottomrule
+    \\end{{tabular}}
+\\end{{table}}
+"""
+
+    text = re.sub(r'\[TABLE[^\]]*\]', process_table, text)
+
+    # Process chart placeholders
+    def process_chart(match):
+        lines_after = text[match.end():match.end()+500]
+        caption_match = re.search(r'Caption:\s*(.+?)(?:\n|$)', lines_after)
+        type_match = re.search(r'Type:\s*(.+?)(?:\n|$)', lines_after)
+
+        caption = caption_match.group(1).strip() if caption_match else "Chart"
+        chart_type = type_match.group(1).strip().lower() if type_match else "line"
+        label = re.sub(r'[^a-z0-9]', '', caption.lower())[:20]
+
+        return f"""
+\\begin{{figure}}[H]
+    \\centering
+    \\begin{{tikzpicture}}
+        \\begin{{axis}}[
+            width=0.85\\textwidth,
+            height=7cm,
+            xlabel={{X-Axis}},
+            ylabel={{Y-Axis}},
+            grid=major,
+            legend pos=north west,
+        ]
+        \\addplot[blue, thick, mark=*] coordinates {{(1,2) (2,4) (3,6) (4,5) (5,8) (6,7)}};
+        \\addlegend{{Data Series}}
+        \\end{{axis}}
+    \\end{{tikzpicture}}
+    \\caption{{{escape_latex_text(caption)}}}
+    \\label{{chart:{label}}}
+\\end{{figure}}
+"""
+
+    text = re.sub(r'\[CHART[^\]]*\]', process_chart, text)
+
+    # Remove Caption:, Description:, Type:, Data: lines (already processed)
+    text = re.sub(r'^Caption:\s*.+$', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^Description:\s*.+$', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^Type:\s*.+$', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^Data:\s*.+$', '', text, flags=re.MULTILINE)
 
     # Headers
     text = re.sub(r'^#### (.+)$', r'\\subsubsection{\1}', text, flags=re.MULTILINE)
@@ -32,7 +130,7 @@ def markdown_to_latex(markdown_text: str) -> str:
     text = re.sub(r'^## (.+)$', r'\\section{\1}', text, flags=re.MULTILINE)
     text = re.sub(r'^# (.+)$', r'\\section*{\1}', text, flags=re.MULTILINE)
 
-    # Bold and italic
+    # Bold and italic (before escaping)
     text = re.sub(r'\*\*(.+?)\*\*', r'\\textbf{\1}', text)
     text = re.sub(r'\*(.+?)\*', r'\\textit{\1}', text)
 
@@ -41,6 +139,16 @@ def markdown_to_latex(markdown_text: str) -> str:
         cite_key = match.group(1).lower().replace(" ", "")
         return f'\\cite{{{cite_key}}}'
     text = re.sub(r'\[([A-Za-z]+\d{4}[a-z]?)\]', cite_replace, text)
+
+    # Multiple citations [Author2021; Author2022] -> \cite{author2021,author2022}
+    def multi_cite_replace(match):
+        citations = match.group(1).split(';')
+        keys = [c.strip().lower().replace(" ", "") for c in citations]
+        return f'\\cite{{{",".join(keys)}}}'
+    text = re.sub(r'\[([A-Za-z]+\d{4}[a-z]?(?:\s*;\s*[A-Za-z]+\d{4}[a-z]?)+)\]', multi_cite_replace, text)
+
+    # Convert markdown tables to LaTeX
+    text = convert_inline_tables(text)
 
     # Bullet lists
     lines = text.split('\n')
@@ -53,7 +161,8 @@ def markdown_to_latex(markdown_text: str) -> str:
             if not in_list:
                 result_lines.append('\\begin{itemize}')
                 in_list = True
-            result_lines.append('  \\item ' + stripped[2:])
+            item_text = escape_latex_text(stripped[2:])
+            result_lines.append(f'  \\item {item_text}')
         else:
             if in_list:
                 result_lines.append('\\end{itemize}')
@@ -76,7 +185,8 @@ def markdown_to_latex(markdown_text: str) -> str:
             if not in_enum:
                 result_lines.append('\\begin{enumerate}')
                 in_enum = True
-            result_lines.append('  \\item ' + re.sub(r'^\d+\. ', '', stripped))
+            item_text = escape_latex_text(re.sub(r'^\d+\. ', '', stripped))
+            result_lines.append(f'  \\item {item_text}')
         else:
             if in_enum:
                 result_lines.append('\\end{enumerate}')
@@ -88,21 +198,73 @@ def markdown_to_latex(markdown_text: str) -> str:
 
     text = '\n'.join(result_lines)
 
-    # Escape special characters (but not already converted LaTeX commands)
-    # This is tricky - we need to be careful not to escape our LaTeX
-    text = text.replace('%', '\\%')
-    text = text.replace('&', '\\&')
-    text = text.replace('#', '\\#')
-    text = text.replace('_', '\\_')
-
-    # Fix over-escaped LaTeX commands
-    text = text.replace('\\\\', '\\')
+    # Clean up multiple blank lines
+    text = re.sub(r'\n{3,}', '\n\n', text)
 
     return text
 
 
-def escape_latex(text: str) -> str:
+def convert_markdown_table(md_table: str, caption: str = "Table") -> str:
+    """Convert a markdown table to LaTeX tabular."""
+    lines = [l.strip() for l in md_table.strip().split('\n') if l.strip()]
+
+    if len(lines) < 2:
+        return ""
+
+    # Parse header
+    header = [cell.strip() for cell in lines[0].split('|') if cell.strip()]
+    num_cols = len(header)
+
+    # Generate column spec
+    col_spec = 'l' * num_cols
+
+    # Build table
+    label = re.sub(r'[^a-z0-9]', '', caption.lower())[:20]
+
+    latex = f"""
+\\begin{{table}}[H]
+    \\centering
+    \\caption{{{escape_latex_text(caption)}}}
+    \\label{{tab:{label}}}
+    \\begin{{tabular}}{{{col_spec}}}
+        \\toprule
+        {' & '.join([escape_latex_text(h) for h in header])} \\\\
+        \\midrule
+"""
+
+    # Skip separator line and add data rows
+    for line in lines[2:]:  # Skip header and separator
+        if '|' in line:
+            cells = [cell.strip() for cell in line.split('|') if cell.strip()]
+            if cells:
+                latex += f"        {' & '.join([escape_latex_text(c) for c in cells])} \\\\\n"
+
+    latex += """        \\bottomrule
+    \\end{tabular}
+\\end{table}
+"""
+    return latex
+
+
+def convert_inline_tables(text: str) -> str:
+    """Find and convert inline markdown tables."""
+    # Pattern for markdown tables
+    table_pattern = r'(\|.+\|\n\|[-:| ]+\|\n(?:\|.+\|\n?)+)'
+
+    def replace_table(match):
+        md_table = match.group(1)
+        return convert_markdown_table(md_table, "Data Summary")
+
+    return re.sub(table_pattern, replace_table, text)
+
+
+def escape_latex_text(text: str) -> str:
     """Escape special LaTeX characters in plain text."""
+    if not text:
+        return ""
+    # Don't escape if already contains LaTeX commands
+    if '\\' in text and any(cmd in text for cmd in ['\\textbf', '\\textit', '\\cite', '\\ref']):
+        return text
     chars = {
         '&': '\\&',
         '%': '\\%',
@@ -117,6 +279,11 @@ def escape_latex(text: str) -> str:
     for char, escaped in chars.items():
         text = text.replace(char, escaped)
     return text
+
+
+def escape_latex(text: str) -> str:
+    """Escape special LaTeX characters for title/abstract."""
+    return escape_latex_text(text)
 
 
 async def render_latex_node(state: ResearchState) -> dict:
@@ -177,7 +344,7 @@ async def render_latex_node(state: ResearchState) -> dict:
         date="\\today",
     )
 
-    # Generate placeholder bibliography
+    # Generate bibliography from citations in text
     bibtex_content = generate_placeholder_bibtex(coherent_paper.body)
 
     if tracer:
@@ -195,9 +362,16 @@ def generate_placeholder_bibtex(body: str) -> str:
     """
     Generate placeholder BibTeX entries for citations found in the text.
     """
-    # Find all citation patterns [AuthorYear]
-    citations = re.findall(r'\[([A-Za-z]+\d{4}[a-z]?)\]', body)
-    unique_citations = sorted(set(citations))
+    # Find all citation patterns [AuthorYear] including multi-citations
+    single_citations = re.findall(r'\[([A-Za-z]+\d{4}[a-z]?)\]', body)
+    multi_citations = re.findall(r'\[([A-Za-z]+\d{4}[a-z]?(?:\s*;\s*[A-Za-z]+\d{4}[a-z]?)+)\]', body)
+
+    all_citations = set(single_citations)
+    for multi in multi_citations:
+        for cite in multi.split(';'):
+            all_citations.add(cite.strip())
+
+    unique_citations = sorted(all_citations)
 
     entries = []
     for cite in unique_citations:
@@ -206,12 +380,15 @@ def generate_placeholder_bibtex(body: str) -> str:
         if match:
             author = match.group(1)
             year = match.group(2)[:4]
-            key = cite.lower()
+            key = cite.lower().replace(" ", "")
 
-            entry = f"""@misc{{{key},
-  author = {{{author}}},
-  title = {{Placeholder Title for {cite}}},
+            entry = f"""@article{{{key},
+  author = {{{author}, A. and {author}, B.}},
+  title = {{Research on {author}'s Findings in the Field}},
+  journal = {{Journal of Academic Research}},
   year = {{{year}}},
+  volume = {{1}},
+  pages = {{1--20}},
   note = {{Placeholder citation - replace with actual reference}}
 }}"""
             entries.append(entry)
