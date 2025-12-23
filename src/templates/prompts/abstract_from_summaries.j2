@@ -1,0 +1,65 @@
+You are writing the abstract for an academic research paper based on chapter summaries.
+
+## Paper Information
+
+**Title**: {{ title }}
+**Thesis**: {{ thesis_statement }}
+**Academic Level**: {{ level }}
+**Language**: {{ language }}
+
+## Chapter Summaries
+
+The following summaries describe each chapter of the paper:
+
+{% for summary in chapter_summaries %}
+{{ summary }}
+
+{% endfor %}
+
+## Your Task
+
+Write a comprehensive **abstract (200-300 words)** that synthesizes the entire paper.
+
+### Abstract Requirements
+
+The abstract MUST include these elements:
+
+1. **Research Context (1-2 sentences)**
+   - What is the broader context or problem area?
+   - Why is this research important?
+
+2. **Research Objectives (1-2 sentences)**
+   - What specific questions or problems does this paper address?
+   - What is the thesis or main argument?
+
+3. **Methodology/Approach (1-2 sentences)**
+   - How was the research conducted?
+   - What methods or frameworks were used?
+
+4. **Key Findings (2-3 sentences)**
+   - What are the main findings or arguments?
+   - Be specific about results and evidence
+
+5. **Conclusions and Implications (1-2 sentences)**
+   - What do these findings mean?
+   - What are the practical or theoretical implications?
+
+6. **Contribution (1 sentence)**
+   - How does this paper contribute to the field?
+
+### Writing Guidelines
+
+- Use formal academic language
+- Write in present or past tense consistently
+- Be specific and substantive, not vague
+- Avoid citations in the abstract
+- Do NOT use phrases like "This paper..." or "The author..."
+- Make every sentence count
+
+### Target Length
+
+**200-300 words** - comprehensive but concise
+
+## Output Format
+
+Provide the abstract as a single, well-structured paragraph or two short paragraphs. The abstract should stand alone and give readers a complete understanding of the paper's scope, approach, findings, and significance.

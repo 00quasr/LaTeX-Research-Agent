@@ -42,32 +42,90 @@ from .nodes import (
     coherence_pass_node,
     render_latex_node,
     compile_pdf_node,
+    draft_chapters_node,
+    finalize_paper_node,
 )
+from .nodes.build_outline import CHAPTER_MODE_THRESHOLD
 
 # =============================================================================
 # LangGraph Workflow Definition
 # =============================================================================
 
 
+def route_after_outline(state: ResearchState) -> str:
+    """
+    Route to chapter-based or section-based workflow based on paper size.
+
+    Papers >= CHAPTER_MODE_THRESHOLD pages use chapter-based workflow.
+    Smaller papers use the legacy section-based workflow.
+    """
+    # Check if we got a chapter_outline (indicates chapter mode)
+    if state.get("chapter_outline") is not None:
+        return "draft_chapters"
+    else:
+        return "draft_sections"
+
+
+def route_after_drafting(state: ResearchState) -> str:
+    """
+    Route to finalize or coherence pass based on mode.
+    """
+    if state.get("chapter_dir") is not None:
+        return "finalize_paper"
+    else:
+        return "coherence_pass"
+
+
 def create_workflow() -> StateGraph:
-    """Create the LangGraph workflow for research paper generation."""
+    """
+    Create the LangGraph workflow for research paper generation.
+
+    Supports two modes:
+    1. Chapter-based (40+ pages): Sequential drafting with rolling context
+    2. Section-based (< 40 pages): Parallel drafting with coherence pass
+    """
 
     workflow = StateGraph(ResearchState)
 
-    # Add nodes
+    # Add nodes - both workflows
     workflow.add_node("research_plan", research_plan_node)
     workflow.add_node("build_outline", build_outline_node)
+
+    # Chapter-based workflow nodes
+    workflow.add_node("draft_chapters", draft_chapters_node)
+    workflow.add_node("finalize_paper", finalize_paper_node)
+
+    # Legacy section-based workflow nodes
     workflow.add_node("draft_sections", draft_sections_node)
     workflow.add_node("coherence_pass", coherence_pass_node)
+
+    # Shared final nodes
     workflow.add_node("render_latex", render_latex_node)
     workflow.add_node("compile_pdf", compile_pdf_node)
 
-    # Define edges (linear flow for MVP)
+    # Define edges
     workflow.set_entry_point("research_plan")
     workflow.add_edge("research_plan", "build_outline")
-    workflow.add_edge("build_outline", "draft_sections")
+
+    # Conditional routing after outline
+    workflow.add_conditional_edges(
+        "build_outline",
+        route_after_outline,
+        {
+            "draft_chapters": "draft_chapters",
+            "draft_sections": "draft_sections",
+        }
+    )
+
+    # Chapter-based path
+    workflow.add_edge("draft_chapters", "finalize_paper")
+    workflow.add_edge("finalize_paper", "render_latex")
+
+    # Legacy section-based path
     workflow.add_edge("draft_sections", "coherence_pass")
     workflow.add_edge("coherence_pass", "render_latex")
+
+    # Shared final path
     workflow.add_edge("render_latex", "compile_pdf")
     workflow.add_edge("compile_pdf", END)
 
@@ -139,9 +197,19 @@ async def runner(inputs: dict, tracer: Tracer) -> Any:
         html = build_result_html(result)
         await tracer.html(html)
 
+        # Determine title based on workflow mode
+        if result.get("final_title"):
+            # Chapter-based mode
+            title = result.get("final_title")
+        elif result.get("coherent_paper"):
+            # Legacy mode
+            title = result.get("coherent_paper").title
+        else:
+            title = "Untitled"
+
         return {
             "success": True,
-            "title": result.get("coherent_paper", {}).title if result.get("coherent_paper") else "Untitled",
+            "title": title,
             "pdf_path": result.get("pdf_path"),
             "tex_path": result.get("tex_path"),
             "zip_path": result.get("zip_path"),
@@ -156,7 +224,10 @@ async def runner(inputs: dict, tracer: Tracer) -> Any:
 def build_result_html(result: ResearchState) -> str:
     """Build the final HTML output for display."""
 
+    # Determine which mode we're in
+    chapter_outline = result.get("chapter_outline")
     coherent_paper = result.get("coherent_paper")
+
     pdf_path = result.get("pdf_path")
     tex_path = result.get("tex_path")
     zip_path = result.get("zip_path")
@@ -166,7 +237,24 @@ def build_result_html(result: ResearchState) -> str:
         "<h1>📄 Research Paper Complete</h1>",
     ]
 
-    if coherent_paper:
+    if chapter_outline:
+        # Chapter-based mode
+        title = result.get("final_title", chapter_outline.title)
+        abstract = result.get("abstract", "")
+        chapter_drafts = result.get("chapter_drafts", [])
+        total_words = sum(d.word_count for d in chapter_drafts) if chapter_drafts else 0
+
+        html_parts.append(f"<h2>{title}</h2>")
+        html_parts.append(f"<p><strong>Word Count:</strong> ~{total_words}</p>")
+        html_parts.append(f"<p><strong>Chapters:</strong> {len(chapter_outline.chapters)}</p>")
+
+        # Abstract preview
+        if abstract:
+            html_parts.append("<h3>Abstract</h3>")
+            html_parts.append(f"<p style='font-style: italic; background: #f5f5f5; padding: 15px; border-radius: 5px;'>{abstract}</p>")
+
+    elif coherent_paper:
+        # Legacy mode
         html_parts.append(f"<h2>{coherent_paper.title}</h2>")
         html_parts.append(f"<p><strong>Word Count:</strong> {coherent_paper.word_count}</p>")
         html_parts.append(f"<p><strong>Sections:</strong> {coherent_paper.sections_count}</p>")
@@ -202,9 +290,23 @@ def build_result_html(result: ResearchState) -> str:
 
     html_parts.append("</div>")
 
-    # Outline summary
-    outline = result.get("outline")
-    if outline:
+    # Paper structure
+    if chapter_outline:
+        # Chapter-based structure
+        html_parts.append("<h3>📋 Paper Structure</h3>")
+        html_parts.append("<ul>")
+        for chapter in chapter_outline.chapters:
+            html_parts.append(f"<li><strong>Chapter {chapter.id}: {chapter.title}</strong>")
+            if chapter.sections:
+                html_parts.append("<ul>")
+                for section in chapter.sections:
+                    html_parts.append(f"<li>{section.id}. {section.title}</li>")
+                html_parts.append("</ul>")
+            html_parts.append("</li>")
+        html_parts.append("</ul>")
+    elif result.get("outline"):
+        # Legacy outline structure
+        outline = result.get("outline")
         html_parts.append("<h3>📋 Paper Structure</h3>")
         html_parts.append("<ul>")
         for section in outline.sections:

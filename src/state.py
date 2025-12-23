@@ -124,6 +124,89 @@ class CoherentPaper(BaseModel):
     sections_count: int
 
 
+# =============================================================================
+# Chapter-Based Models (for resource-efficient large paper generation)
+# =============================================================================
+
+class Chapter(BaseModel):
+    """
+    A chapter grouping 2-3 sections, ~3000 words max.
+
+    This enables sequential drafting within LLM token limits while
+    maintaining coherence through rolling context summaries.
+    """
+
+    id: str = Field(description="Chapter number, e.g., '1', '2'")
+    title: str = Field(description="Chapter title")
+    sections: List[Section] = Field(
+        description="2-3 sections grouped in this chapter",
+        min_length=1,
+        max_length=4
+    )
+    target_words: int = Field(
+        description="Target word count for entire chapter",
+        ge=2000,
+        le=4000
+    )
+
+    def get_section_titles(self) -> List[str]:
+        """Return list of section titles in this chapter."""
+        return [s.title for s in self.sections]
+
+
+class ChapterDraft(BaseModel):
+    """
+    A drafted chapter with summary for rolling context.
+
+    The summary is used to provide context to subsequent chapters
+    without passing the full content (which would exceed token limits).
+    """
+
+    chapter_id: str = Field(description="Chapter ID matching the outline")
+    title: str = Field(description="Chapter title")
+    content: str = Field(description="Full chapter content in markdown")
+    summary: str = Field(
+        description="100-word summary for next chapter context",
+        max_length=800  # ~100 words with buffer
+    )
+    word_count: int = Field(description="Actual word count of content")
+    file_path: str = Field(description="Path to chapter markdown file on disk")
+
+
+class ChapterOutline(BaseModel):
+    """
+    Chapter-based outline structure for large papers.
+
+    Groups sections into chapters to enable sequential drafting
+    within LLM token limits.
+    """
+
+    title: str = Field(description="Final paper title")
+    abstract_summary: str = Field(
+        description="Brief summary for the abstract (expanded from chapter summaries)",
+        max_length=500
+    )
+    chapters: List[Chapter] = Field(
+        description="All chapters of the paper",
+        min_length=5,
+        max_length=20
+    )
+    total_estimated_words: int = Field(
+        description="Total estimated word count"
+    )
+
+    def get_all_sections(self) -> List[Section]:
+        """Return all sections across all chapters."""
+        result = []
+        for chapter in self.chapters:
+            result.extend(chapter.sections)
+        return result
+
+    def get_chapter_count(self) -> int:
+        """Return number of chapters."""
+        return len(self.chapters)
+
+
 class Citation(BaseModel):
     """A citation/reference entry."""
 
@@ -199,6 +282,14 @@ class ResearchState(TypedDict, total=False):
     coherent_paper: CoherentPaper
     bibliography: Bibliography
 
+    # === Chapter-based content (for large papers) ===
+    chapter_outline: ChapterOutline  # Chapter-based outline structure
+    chapter_drafts: List[ChapterDraft]  # Drafted chapters with summaries
+    chapter_dir: str  # Path to temp directory with chapter markdown files
+    chapter_summaries: List[str]  # 100-word summaries for abstract generation
+    abstract: str  # Final abstract generated from chapter summaries
+    final_title: str  # Final paper title
+
     # === LaTeX outputs ===
     latex_content: str
     bibtex_content: str
@@ -236,6 +327,41 @@ DEFAULT_CONFIG = {
 # Standard academic paper: ~500 words per page with margins, spacing, figures
 WORDS_PER_PAGE = 500
 
+# =============================================================================
+# Chapter Sizing Configuration (for resource-efficient large papers)
+# =============================================================================
+
+# Maximum words per chapter to stay within LLM output limits
+# GPT-4o output limit: ~16K tokens = ~4000 words
+# We target 3000 words to leave headroom for formatting
+WORDS_PER_CHAPTER = 3000
+
+# Maximum summary words for rolling context
+# Each chapter gets a ~100 word summary passed to the next chapter
+MAX_SUMMARY_WORDS = 100
+
+# Maximum total context words from previous chapters
+# We include summaries of all previous chapters up to this limit
+MAX_CONTEXT_WORDS = 500
+
+# Minimum chapters for a large paper (60+ pages)
+MIN_CHAPTERS_LARGE_PAPER = 10
+
+
 def estimate_words_from_pages(pages: int) -> int:
     """Estimate total words from target page count."""
     return pages * WORDS_PER_PAGE
+
+
+def estimate_chapters_from_pages(pages: int) -> int:
+    """Estimate number of chapters needed for target page count."""
+    total_words = estimate_words_from_pages(pages)
+    chapters = max(5, total_words // WORDS_PER_CHAPTER)
+    return chapters
+
+
+def get_chapter_word_target(total_words: int, num_chapters: int) -> int:
+    """Calculate target words per chapter."""
+    base_target = total_words // num_chapters
+    # Cap at WORDS_PER_CHAPTER to stay within LLM limits
+    return min(base_target, WORDS_PER_CHAPTER)

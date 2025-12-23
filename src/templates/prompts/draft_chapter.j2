@@ -1,0 +1,147 @@
+You are an expert academic writer drafting a comprehensive chapter of a substantial research paper.
+
+## Paper Context
+
+**Title**: {{ paper_title }}
+**Thesis**: {{ thesis_statement }}
+
+## Your Assignment
+
+Write **Chapter {{ chapter.id }}: {{ chapter.title }}** with substantial depth and detail.
+
+**Target Word Count**: {{ target_words }} words (MINIMUM - aim for this or slightly higher)
+
+### Sections to Cover in This Chapter
+
+{% for section in chapter.sections %}
+#### {{ section.id }}. {{ section.title }}
+**Purpose**: {{ section.purpose }}
+
+**Key Points to Cover**:
+{% for point in section.key_points %}
+- {{ point }}
+{% endfor %}
+
+{% if section.subsections %}
+**Subsections**:
+{% for sub in section.subsections %}
+- {{ sub.id }} {{ sub.title }}: {{ sub.key_points | join('; ') }}
+{% endfor %}
+{% endif %}
+
+{% if section.suggested_figures %}
+**Suggested Visual Elements**:
+{% for fig in section.suggested_figures %}
+- {{ fig }}
+{% endfor %}
+{% endif %}
+
+---
+{% endfor %}
+
+{% if previous_context %}
+## Context from Previous Chapters
+
+The following summaries describe what has been covered in earlier chapters. Build upon these foundations and maintain continuity:
+
+{{ previous_context }}
+
+---
+{% endif %}
+
+## Writing Requirements
+
+- **Academic Level**: {{ level }}
+- **Language**: {{ language }}
+- **Citation Style**: {{ citation_style }}
+
+{% if additional_instructions %}
+## Additional Requirements
+{{ additional_instructions }}
+{% endif %}
+
+## CRITICAL Instructions for Comprehensive Writing
+
+### Length and Depth Requirements
+- **Target: {{ target_words }} words** - this is a substantial chapter
+- Each key point should be developed into 2-4 substantial paragraphs
+- Do NOT be superficial - this is a comprehensive academic paper
+- Include detailed explanations, examples, and analysis
+- Each section within this chapter needs thorough treatment
+
+### Content Structure
+1. **Chapter Opening**: Strong introduction establishing the chapter's focus and connection to previous material
+2. **Section Development**: Each section gets comprehensive treatment:
+   - Explain concepts and ideas in detail
+   - Provide specific examples, case studies, or evidence
+   - Include relevant data, statistics, or research findings
+   - Analyze implications and connections to the thesis
+3. **Smooth Transitions**: Clear connections between sections and ideas
+4. **Chapter Closing**: Summarize key points and transition to what comes next
+
+### Visual Element Descriptions
+When including figures, tables, or charts, use this format:
+
+**[FIGURE X: Title]**
+Caption: Detailed description of the figure
+Description: What the figure shows and why it's important
+
+**[TABLE X: Title]**
+Caption: Description of the table
+| Column 1 | Column 2 | Column 3 |
+|----------|----------|----------|
+| Data     | Data     | Data     |
+
+**[CHART X: Title]**
+Caption: Description of the chart
+Type: bar/line/pie/scatter
+Data: Description of data points and trends
+
+### Citation Guidelines
+- Include citations in format [AuthorYear] throughout
+- Cite sources for statistics, claims, and research findings
+- Aim for 10-20 citations per chapter
+- Examples:
+  - "Research by [Smith2023] demonstrates that..."
+  - "According to industry analysis [Johnson2022], the market grew by..."
+  - "Several studies [Brown2021; Davis2022; Wilson2023] confirm..."
+
+### Academic Tone Requirements
+- Use formal, scholarly language appropriate for {{ level }} level
+- Avoid colloquialisms and informal expressions
+- Use discipline-specific terminology correctly
+- Maintain objective, analytical perspective
+- Support claims with evidence and reasoning
+
+### Paragraph Guidelines
+- Each paragraph: 100-200 words
+- Clear topic sentence
+- Supporting evidence and analysis
+- Concluding sentence that transitions
+
+{% if previous_context %}
+### Continuity Requirements
+- Reference and build upon concepts from previous chapters where relevant
+- Do NOT repeat content already covered - advance the discussion
+- Maintain consistent terminology and tone
+- Connect new material to the thesis statement
+{% else %}
+### First Chapter Requirements
+- Establish the research context and significance
+- Introduce key terminology that will be used throughout
+- Set up the analytical framework for the paper
+- Preview what will be covered in subsequent chapters
+{% endif %}
+
+## Output Format
+
+Write the complete chapter content in markdown format. Include:
+- All sections listed above with proper depth
+- Well-developed paragraphs (no bullet point lists as main content)
+- Embedded figure/table/chart descriptions in [FIGURE/TABLE/CHART] format
+- Citations in [AuthorYear] format
+- Use #### for subsection headers within sections
+
+Do NOT include the chapter title header - start directly with the content.
+
+**REMINDER: This chapter must be approximately {{ target_words }} words. Write comprehensively and thoroughly!**

@@ -1,5 +1,9 @@
 """
-Render LaTeX Node - Converts the coherent paper to LaTeX format.
+Render LaTeX Node - Converts the paper to LaTeX format.
+
+Supports two modes:
+1. Chapter-based (new): Reads chapter files from disk sequentially
+2. Legacy: Uses coherent_paper from state (for backward compatibility)
 """
 
 import re
@@ -11,6 +15,30 @@ from ..state import ResearchState
 
 # Template directory
 TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
+
+
+def read_chapters_from_disk(chapter_dir: str) -> str:
+    """
+    Read all chapter files from disk and combine them.
+
+    This is the resource-efficient approach that doesn't hold
+    the entire paper in memory at once.
+
+    Args:
+        chapter_dir: Path to directory containing chapter_XX.md files
+
+    Returns:
+        Combined markdown content from all chapters
+    """
+    chapter_path = Path(chapter_dir)
+    chapter_files = sorted(chapter_path.glob("chapter_*.md"))
+
+    combined_content = []
+    for chapter_file in chapter_files:
+        content = chapter_file.read_text()
+        combined_content.append(content)
+
+    return "\n\n".join(combined_content)
 
 
 def markdown_to_latex(markdown_text: str) -> str:
@@ -288,23 +316,43 @@ def escape_latex(text: str) -> str:
 
 async def render_latex_node(state: ResearchState) -> dict:
     """
-    Render the coherent paper as a LaTeX document.
+    Render the paper as a LaTeX document.
+
+    Supports two modes:
+    1. Chapter-based (new): Reads from chapter_dir, uses abstract from state
+    2. Legacy: Uses coherent_paper from state
 
     Uses Jinja2 templates to generate the .tex file.
     """
     tracer = state.get("tracer")
-    coherent_paper = state["coherent_paper"]
 
     if tracer:
         await tracer.markdown("## 📄 Rendering LaTeX")
         await tracer.markdown("Converting to LaTeX format...")
 
-    # Convert markdown body to LaTeX
-    latex_body = markdown_to_latex(coherent_paper.body)
+    # Determine which mode we're in
+    chapter_dir = state.get("chapter_dir")
 
-    # Escape title and abstract
-    title = escape_latex(coherent_paper.title)
-    abstract = escape_latex(coherent_paper.abstract)
+    if chapter_dir:
+        # Chapter-based mode (new, resource-efficient)
+        if tracer:
+            await tracer.markdown("Using chapter-based rendering...")
+
+        # Read chapters from disk
+        markdown_body = read_chapters_from_disk(chapter_dir)
+
+        # Get title and abstract from state
+        title = escape_latex(state.get("final_title", state["chapter_outline"].title))
+        abstract = escape_latex(state.get("abstract", ""))
+    else:
+        # Legacy mode (coherent_paper from state)
+        coherent_paper = state["coherent_paper"]
+        markdown_body = coherent_paper.body
+        title = escape_latex(coherent_paper.title)
+        abstract = escape_latex(coherent_paper.abstract)
+
+    # Convert markdown body to LaTeX
+    latex_body = markdown_to_latex(markdown_body)
 
     # Load LaTeX template
     env = Environment(
@@ -345,7 +393,7 @@ async def render_latex_node(state: ResearchState) -> dict:
     )
 
     # Generate bibliography from citations in text
-    bibtex_content = generate_placeholder_bibtex(coherent_paper.body)
+    bibtex_content = generate_placeholder_bibtex(markdown_body)
 
     if tracer:
         await tracer.markdown("### LaTeX Rendered")

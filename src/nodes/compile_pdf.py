@@ -134,14 +134,16 @@ async def run_latex_docker(workdir: Path, tex_filename: str, tracer) -> Path | N
     result = subprocess.run(
         docker_cmd,
         capture_output=True,
-        text=True,
         timeout=300,  # 5 minute timeout
     )
 
+    # Decode output with error handling for non-UTF-8 bytes
+    stderr = result.stderr.decode('utf-8', errors='replace')
+
     if result.returncode != 0:
         if tracer:
-            await tracer.debug(f"pdflatex stderr: {result.stderr[:1000]}")
-        raise RuntimeError(f"pdflatex failed: {result.stderr[:500]}")
+            await tracer.debug(f"pdflatex stderr: {stderr[:1000]}")
+        raise RuntimeError(f"pdflatex failed: {stderr[:500]}")
 
     pdf_path = workdir / "paper.pdf"
     if pdf_path.exists():
@@ -168,7 +170,6 @@ async def run_latex_local(workdir: Path, tex_filename: str, tracer) -> Path | No
             ["pdflatex", "-interaction=nonstopmode", tex_filename],
             cwd=workdir,
             capture_output=True,
-            text=True,
             timeout=120,
         )
 
