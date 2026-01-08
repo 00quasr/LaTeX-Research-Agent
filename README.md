@@ -2,6 +2,10 @@
 
 Generate comprehensive academic research papers with full LaTeX formatting and PDF output.
 
+
+https://github.com/user-attachments/assets/f2302b4a-8712-45c1-9510-f62246f72b59
+
+
 ## Features
 
 - **Structured Workflow**: LangGraph-based pipeline for predictable, inspectable execution
