@@ -116,6 +116,7 @@ async def run_latex_docker(workdir: Path, tex_filename: str, tracer) -> Path | N
     Run pdflatex inside Docker container.
     """
     # Use texlive Docker image
+    # NOTE: Using biber instead of bibtex to match biblatex backend in template
     docker_cmd = [
         "docker", "run", "--rm",
         "-v", f"{workdir}:/workdir",
@@ -123,7 +124,7 @@ async def run_latex_docker(workdir: Path, tex_filename: str, tracer) -> Path | N
         "texlive/texlive:latest",
         "sh", "-c",
         f"pdflatex -interaction=nonstopmode {tex_filename} && "
-        f"bibtex paper && "
+        f"biber paper && "
         f"pdflatex -interaction=nonstopmode {tex_filename} && "
         f"pdflatex -interaction=nonstopmode {tex_filename}"
     ]
@@ -165,6 +166,7 @@ async def run_latex_local(workdir: Path, tex_filename: str, tracer) -> Path | No
         raise RuntimeError("pdflatex not found on system")
 
     # Run pdflatex multiple times for references
+    # NOTE: Using biber instead of bibtex to match biblatex backend in template
     for i in range(3):
         result = subprocess.run(
             ["pdflatex", "-interaction=nonstopmode", tex_filename],
@@ -174,9 +176,9 @@ async def run_latex_local(workdir: Path, tex_filename: str, tracer) -> Path | No
         )
 
         if i == 0 and (workdir / "paper.aux").exists():
-            # Run bibtex
+            # Run biber for bibliography processing
             subprocess.run(
-                ["bibtex", "paper"],
+                ["biber", "paper"],
                 cwd=workdir,
                 capture_output=True,
                 timeout=60,

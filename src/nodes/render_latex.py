@@ -42,20 +42,79 @@ def read_chapters_from_disk(chapter_dir: str) -> str:
 
 
 def markdown_to_latex(markdown_text: str) -> str:
-    """
-    Convert markdown to LaTeX with support for figures, tables, and charts.
+    r"""
+    Convert markdown to LaTeX with support for embedded LaTeX and markdown elements.
 
     Handles:
+    - Embedded LaTeX blocks (preserved as-is)
     - Headers (## -> \section, ### -> \subsection)
     - Bold (**text** -> \textbf{text})
     - Italic (*text* -> \textit{text})
     - Lists
     - Citations [AuthorYear] -> \cite{AuthorYear}
-    - Figure/Table/Chart placeholders
+    - Legacy Figure/Table/Chart placeholders (for backward compatibility)
     """
     text = markdown_text
 
+    # Step 1: Extract and preserve embedded LaTeX blocks
+    # These are LaTeX environments that the LLM generated directly
+    latex_blocks = []
+
+    # Extract top-level figure and table environments (which may contain nested environments)
+    # We process these separately to handle nesting properly
+    def extract_latex_environments(text_to_process, env_name):
+        """Extract all instances of a LaTeX environment, handling nesting."""
+        pattern = rf'\\begin\{{{env_name}\}}'
+        result = text_to_process
+        offset = 0
+
+        while True:
+            match = re.search(pattern, result[offset:])
+            if not match:
+                break
+
+            start_pos = offset + match.start()
+            # Find the matching \end by counting begin/end pairs
+            depth = 1
+            pos = offset + match.end()
+
+            while depth > 0 and pos < len(result):
+                begin_match = re.search(rf'\\begin\{{{env_name}\}}', result[pos:pos+100])
+                end_match = re.search(rf'\\end\{{{env_name}\}}', result[pos:pos+100])
+
+                if end_match and (not begin_match or end_match.start() < begin_match.start()):
+                    pos += end_match.end()
+                    depth -= 1
+                elif begin_match:
+                    pos += begin_match.end()
+                    depth += 1
+                else:
+                    # Search further ahead
+                    next_end = re.search(rf'\\end\{{{env_name}\}}', result[pos:])
+                    if next_end:
+                        pos += next_end.end()
+                        depth -= 1
+                    else:
+                        break
+
+            if depth == 0:
+                # Found complete environment
+                latex_block = result[start_pos:pos]
+                placeholder = f"<<<LATEX_BLOCK_{len(latex_blocks)}>>>"
+                latex_blocks.append(latex_block)
+                result = result[:start_pos] + placeholder + result[pos:]
+                offset = start_pos + len(placeholder)
+            else:
+                offset = pos
+
+        return result
+
+    # Extract figure and table environments (these are the top-level ones we want to preserve)
+    text = extract_latex_environments(text, 'figure')
+    text = extract_latex_environments(text, 'table')
+
     # Process figure placeholders [FIGURE: id] or [FIGURE X: Title]
+    # This is kept for backward compatibility with old markdown
     def process_figure(match):
         full_match = match.group(0)
         # Try to extract caption from following lines
@@ -158,9 +217,12 @@ def markdown_to_latex(markdown_text: str) -> str:
     text = re.sub(r'^## (.+)$', r'\\section{\1}', text, flags=re.MULTILINE)
     text = re.sub(r'^# (.+)$', r'\\section*{\1}', text, flags=re.MULTILINE)
 
-    # Bold and italic (before escaping)
-    text = re.sub(r'\*\*(.+?)\*\*', r'\\textbf{\1}', text)
-    text = re.sub(r'\*(.+?)\*', r'\\textit{\1}', text)
+    # Bold and italic (process before escaping special characters)
+    # Use more specific patterns to avoid matching across unintended boundaries
+    # Match ** that are not preceded/followed by whitespace at boundaries
+    text = re.sub(r'\*\*([^\*\n]+?)\*\*', r'\\textbf{\1}', text)
+    # Italic: match * but not ** (negative lookahead/lookbehind)
+    text = re.sub(r'(?<!\*)\*(?!\*)([^\*\n]+?)(?<!\*)\*(?!\*)', r'\\textit{\1}', text)
 
     # Citations [AuthorYear] -> \cite{authoryear}
     def cite_replace(match):
@@ -228,6 +290,12 @@ def markdown_to_latex(markdown_text: str) -> str:
 
     # Clean up multiple blank lines
     text = re.sub(r'\n{3,}', '\n\n', text)
+
+    # Step 2: Restore preserved LaTeX blocks
+    # Replace placeholders with the original LaTeX code
+    for i, latex_block in enumerate(latex_blocks):
+        placeholder = f"<<<LATEX_BLOCK_{i}>>>"
+        text = text.replace(placeholder, latex_block)
 
     return text
 

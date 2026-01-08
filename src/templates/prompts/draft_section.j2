@@ -69,15 +69,55 @@ This is the first section being drafted.
 3. **Transitions**: Smooth connections between paragraphs and ideas
 4. **Closing**: Summarize key takeaways and transition to next section
 
-### Visual Element Descriptions
-When suggesting figures, tables, or charts, include:
-- **[FIGURE X: Title]** - Description of what the figure shows
-- **[TABLE X: Title]** - Description of table contents and structure
-- **[CHART X: Title]** - Description of data visualization
+### Visual Element Instructions
+For figures, tables, and charts, generate LaTeX code directly (NOT markdown descriptions).
 
-Example:
-[FIGURE 1: Evolution of Techno Music Production Technology]
-A timeline diagram showing the progression from analog synthesizers (1980s) through digital audio workstations (1990s) to modern AI-assisted production tools (2020s). Key milestones include the Roland TR-808, Ableton Live's introduction, and neural audio synthesis.
+**For Tables**: Use LaTeX table syntax with \begin{table} and \begin{tabular}. Example:
+\begin{table}[H]
+    \centering
+    \caption{Feature comparison}
+    \label{tab:features}
+    \begin{tabular}{lcc}
+        \toprule
+        Feature & Solution A & Solution B \\
+        \midrule
+        Speed & Fast & Moderate \\
+        Cost & Low & High \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+**For Charts/Figures**: Use TikZ/PGFPlots with REAL data points when discussing metrics, trends, or comparisons:
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            width=0.8\textwidth,
+            height=6cm,
+            xlabel={Parameter},
+            ylabel={Value},
+            grid=major,
+        ]
+        \addplot[blue, thick, mark=*] coordinates {
+            (1,25) (2,45) (3,60) (4,52) (5,70)
+        };
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Performance metrics across different parameters}
+    \label{fig:performance}
+\end{figure}
+
+**For Descriptive Figures**: When visualizing concepts without numerical data:
+\begin{figure}[H]
+    \centering
+    \fbox{\parbox{0.8\textwidth}{\centering\vspace{1.5cm}
+    \textit{A timeline diagram showing the evolution from analog synthesizers (1980s) through digital audio workstations (1990s) to AI-assisted production (2020s).}
+    \vspace{1.5cm}}}
+    \caption{Evolution of music production technology}
+    \label{fig:evolution}
+\end{figure}
+
+**IMPORTANT**: All LaTeX code is embedded directly in your markdown output
 
 ### Citation Guidelines
 - Include citations in format [AuthorYear] throughout

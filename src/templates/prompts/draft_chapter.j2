@@ -79,23 +79,60 @@ The following summaries describe what has been covered in earlier chapters. Buil
 3. **Smooth Transitions**: Clear connections between sections and ideas
 4. **Chapter Closing**: Summarize key points and transition to what comes next
 
-### Visual Element Descriptions
-When including figures, tables, or charts, use this format:
+### Visual Element Instructions
+For figures, tables, and charts, generate LaTeX code directly (NOT markdown descriptions).
 
-**[FIGURE X: Title]**
-Caption: Detailed description of the figure
-Description: What the figure shows and why it's important
+**For Tables**: Use LaTeX table syntax with \begin{table} and \begin{tabular}. Example:
+\begin{table}[H]
+    \centering
+    \caption{Comparison of Layer-2 solutions}
+    \label{tab:comparison}
+    \begin{tabular}{lcc}
+        \toprule
+        Solution & TPS & Latency \\
+        \midrule
+        Lightning Network & 1M+ & <1s \\
+        Optimistic Rollups & 2000 & ~1min \\
+        \bottomrule
+    \end{tabular}
+\end{table}
 
-**[TABLE X: Title]**
-Caption: Description of the table
-| Column 1 | Column 2 | Column 3 |
-|----------|----------|----------|
-| Data     | Data     | Data     |
+**For Charts/Figures**: Use TikZ/PGFPlots with REAL data points. Example:
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            width=0.8\textwidth,
+            height=6cm,
+            xlabel={Year},
+            ylabel={Adoption Rate (\%)},
+            grid=major,
+            legend pos=north west,
+        ]
+        \addplot[blue, thick, mark=*] coordinates {
+            (2015,5) (2016,12) (2017,18) (2018,28) (2019,35) (2020,48) (2021,62) (2022,75)
+        };
+        \legend{Layer-2 Adoption}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Growth of Layer-2 solution adoption over time}
+    \label{fig:adoption}
+\end{figure}
 
-**[CHART X: Title]**
-Caption: Description of the chart
-Type: bar/line/pie/scatter
-Data: Description of data points and trends
+**For Descriptive Figures**: When no real data exists, create a descriptive box:
+\begin{figure}[H]
+    \centering
+    \fbox{\parbox{0.8\textwidth}{\centering\vspace{1.5cm}
+    \textit{Diagram showing the architecture of the Lightning Network with payment channels connecting multiple nodes in a decentralized network topology.}
+    \vspace{1.5cm}}}
+    \caption{Lightning Network architecture overview}
+    \label{fig:lightning}
+\end{figure}
+
+**IMPORTANT**:
+- Generate actual data points for charts when discussing performance, trends, comparisons
+- Use realistic values based on the research context
+- All LaTeX code will be embedded directly in the markdown output
 
 ### Citation Guidelines
 - Include citations in format [AuthorYear] throughout
